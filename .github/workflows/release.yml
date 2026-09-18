@@ -54,11 +54,17 @@ jobs:
           if gh release view "$VERSION" >/dev/null 2>&1; then
             existing="$RUNNER_TEMP/existing-release"
             mkdir -p "$existing"
-            gh release download "$VERSION" --dir "$existing" --pattern main.js --pattern manifest.json --pattern styles.css
+            gh release download "$VERSION" --dir "$existing" \
+              --pattern main.js \
+              --pattern manifest.json \
+              --pattern styles.css \
+              --pattern "$archive"
             cmp main.js "$existing/main.js"
             cmp manifest.json "$existing/manifest.json"
             cmp styles.css "$existing/styles.css"
-            gh release view "$VERSION" --json assets --jq '.assets[].name' | grep -Fx "$archive"
+            unzip -p "$existing/$archive" main.js | cmp main.js -
+            unzip -p "$existing/$archive" manifest.json | cmp manifest.json -
+            unzip -p "$existing/$archive" styles.css | cmp styles.css -
             echo "Release $VERSION already exists with matching required assets."
           else
             gh release create "$VERSION" main.js manifest.json styles.css "$archive" \
